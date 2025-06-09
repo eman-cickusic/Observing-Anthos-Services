@@ -1,0 +1,88 @@
+# Canary Deployment Configuration for Testing High Latency Scenarios
+# This file demonstrates traffic splitting for canary deployments in service mesh
+
+# Destination Rule for routing traffic between service versions
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: productcatalogservice
+spec:
+  host: productcatalogservice
+  subsets:
+  - name: v1
+    labels:
+      version: v1
+  - name: v2
+    labels:
+      version: v2
+
+---
+# Virtual Service for traffic splitting (75% v1, 25% v2)
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: productcatalogservice
+spec:
+  hosts:
+  - productcatalogservice
+  http:
+  - match:
+    - headers:
+        end-user:
+          exact: jason
+    route:
+    - destination:
+        host: productcatalogservice
+        subset: v2
+  - route:
+    - destination:
+        host: productcatalogservice
+        subset: v1
+      weight: 75
+    - destination:
+        host: productcatalogservice
+        subset: v2
+      weight: 25
+
+---
+# Deployment for v2 with artificial latency (for testing purposes)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: productcatalogservice-v2
+spec:
+  selector:
+    matchLabels:
+      app: productcatalogservice
+      version: v2
+  template:
+    metadata:
+      labels:
+        app: productcatalogservice
+        version: v2
+    spec:
+      serviceAccountName: productcatalog
+      terminationGracePeriodSeconds: 5
+      containers:
+      - name: server
+        image: gcr.io/google-samples/microservices-demo/productcatalogservice:v0.3.5
+        ports:
+        - containerPort: 3550
+        env:
+        - name: PORT
+          value: "3550"
+        - name: EXTRA_LATENCY
+          value: "3s"  # This adds 3 seconds of latency to simulate a problematic service
+        readinessProbe:
+          exec:
+            command: ["/bin/grpc_health_probe", "-addr=:3550"]
+        livenessProbe:
+          exec:
+            command: ["/bin/grpc_health_probe", "-addr=:3550"]
+        resources:
+          requests:
+            cpu: 100m
+            memory: 64Mi
+          limits:
+            cpu: 200m
+            memory: 128Mi

@@ -1,0 +1,81 @@
+# Example Service Level Objective (SLO) Configuration
+# This demonstrates how to define SLOs for microservices in Cloud Service Mesh
+
+# Latency-based SLO
+apiVersion: servicemanagement.cnrm.cloud.google.com/v1beta1
+kind: ServiceLevelObjective
+metadata:
+  name: productcatalog-latency-slo
+  annotations:
+    cnrm.cloud.google.com/project-id: "PROJECT_ID" # Replace with your project ID
+spec:
+  serviceName: "productcatalogservice"
+  displayName: "99.5% - Latency - Calendar day"
+  
+  # Service Level Indicator (SLI) configuration
+  serviceLevelIndicator:
+    requestBased:
+      distributionCut:
+        distributionFilter: "resource.type=\"k8s_container\""
+        range:
+          max: 1000  # 1000ms latency threshold
+  
+  # SLO goal configuration
+  goal: 0.995  # 99.5% of requests should meet the latency requirement
+  
+  # Calendar period (daily)
+  calendarPeriod: "DAY"
+
+---
+# Availability-based SLO
+apiVersion: servicemanagement.cnrm.cloud.google.com/v1beta1
+kind: ServiceLevelObjective
+metadata:
+  name: productcatalog-availability-slo
+  annotations:
+    cnrm.cloud.google.com/project-id: "PROJECT_ID" # Replace with your project ID
+spec:
+  serviceName: "productcatalogservice"
+  displayName: "99.9% - Availability - Rolling 30 days"
+  
+  # Service Level Indicator (SLI) configuration
+  serviceLevelIndicator:
+    requestBased:
+      goodTotalRatio:
+        goodServiceFilter: "resource.type=\"k8s_container\" AND metric.labels.response_code<\"500\""
+        totalServiceFilter: "resource.type=\"k8s_container\""
+  
+  # SLO goal configuration
+  goal: 0.999  # 99.9% availability
+  
+  # Rolling window period (30 days)
+  rollingPeriod: "2592000s"  # 30 days in seconds
+
+---
+# Error rate SLO
+apiVersion: servicemanagement.cnrm.cloud.google.com/v1beta1
+kind: ServiceLevelObjective
+metadata:
+  name: productcatalog-error-rate-slo
+  annotations:
+    cnrm.cloud.google.com/project-id: "PROJECT_ID" # Replace with your project ID
+spec:
+  serviceName: "productcatalogservice"
+  displayName: "99% - Error Rate - Rolling 7 days"
+  
+  # Service Level Indicator (SLI) configuration
+  serviceLevelIndicator:
+    requestBased:
+      goodTotalRatio:
+        goodServiceFilter: |
+          resource.type="k8s_container"
+          AND metric.labels.response_code_class="2xx"
+        badServiceFilter: |
+          resource.type="k8s_container"
+          AND (metric.labels.response_code_class="4xx" OR metric.labels.response_code_class="5xx")
+  
+  # SLO goal configuration
+  goal: 0.99  # 99% of requests should be successful
+  
+  # Rolling window period (7 days)
+  rollingPeriod: "604800s"  # 7 days in seconds
