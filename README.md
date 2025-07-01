@@ -6,7 +6,7 @@ This repository contains the complete guide and configuration files for setting 
 
 https://youtu.be/zJgNEpMGiNY
 
-## Overview     
+## Overview      
  
 This project demonstrates how to:
 - Install Cloud Service Mesh on GKE with tracing enabled
