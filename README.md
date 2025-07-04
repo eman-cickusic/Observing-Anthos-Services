@@ -26,7 +26,7 @@ The lab uses Google Cloud's Online Boutique application, a cloud-native microser
 - Access to Google Cloud Console
 - Basic familiarity with Kubernetes and Istio concepts
 
-## Setup Instructions
+## Setup Instructions 
 
 ### 1. Environment Setup
 
